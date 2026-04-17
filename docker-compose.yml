@@ -1,26 +1,38 @@
 services:
   node1:
-    build: ./node
+    build: 
+      context: .
+      dockerfile: node/Dockerfile
     environment:
       - PORT=:8081
   node2:
-    build: ./node
+    build: 
+      context: .
+      dockerfile: node/Dockerfile
     environment:
       - PORT=:8082
   node3:
-    build: ./node
+    build: 
+      context: .
+      dockerfile: node/Dockerfile
     environment:
       - PORT=:8083
   node4:
-    build: ./node
+    build: 
+      context: .
+      dockerfile: node/Dockerfile
     environment:
       - PORT=:8084
   node5:
-    build: ./node
+    build: 
+      context: .
+      dockerfile: node/Dockerfile
     environment:
       - PORT=:8085
   lb:
-    build: ./load_balancer
+    build: 
+      context: .
+      dockerfile: load_balancer/Dockerfile
     ports:
       - 8080:8080
     depends_on:
