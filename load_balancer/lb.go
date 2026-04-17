@@ -1,4 +1,4 @@
-package loadbalancer
+package lb
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"sync"
 )
 
-var nodes = []string{"http://localhost:8081", "http://localhost:8082", "http://localhost:8083", "http://localhost:8084", "http://localhost:8085"}
+var nodes = []string{"http://node1:8081", "http://node2:8082", "http://node3:8083", "http://node4:8084", "http://node5:8085"}
 var nodes_weight = []int{3, 5, 1, 3, 8}
 var nodes_connections = []int{0, 0, 0, 0, 0}
 var lc_mu sync.Mutex
@@ -65,6 +65,7 @@ func lbHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid node url", http.StatusInternalServerError)
 		return
 	}
+	fmt.Printf("request is going to node : %v",node_id)
 	proxy := httputil.NewSingleHostReverseProxy(node_url)
 	proxy.ServeHTTP(w, r)
 	lc_mu.Lock()

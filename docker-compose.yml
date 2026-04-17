@@ -1,0 +1,31 @@
+services:
+  node1:
+    build: ./node
+    environment:
+      - PORT=:8081
+  node2:
+    build: ./node
+    environment:
+      - PORT=:8082
+  node3:
+    build: ./node
+    environment:
+      - PORT=:8083
+  node4:
+    build: ./node
+    environment:
+      - PORT=:8084
+  node5:
+    build: ./node
+    environment:
+      - PORT=:8085
+  lb:
+    build: ./load_balancer
+    ports:
+      - 8080:8080
+    depends_on:
+      - node1
+      - node2
+      - node3
+      - node4
+      - node5
