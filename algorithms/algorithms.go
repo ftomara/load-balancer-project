@@ -1,11 +1,11 @@
-package main
+package algorithms
 
 import (
 	"hash/fnv"
 	"math/rand"
 )
 
-func round_robin(nodes_count int) func() int {
+func RoundRobin(nodes_count int) func() int {
 	next := 0
 	return func() int {
 		n := next % nodes_count
@@ -14,7 +14,7 @@ func round_robin(nodes_count int) func() int {
 	}
 }
 
-func w_round_robin(nodes_count int, nodes_weight []int) func() int {
+func WRoundRobin(nodes_count int, nodes_weight []int) func() int {
 	next_node := 0
 	current_node_limit := 0
 
@@ -32,11 +32,11 @@ func w_round_robin(nodes_count int, nodes_weight []int) func() int {
 	}
 }
 
-func random_lb(nodes_count int) int {
+func RandomLb(nodes_count int) int {
 	return rand.Intn(nodes_count)
 }
 
-func least_connections(connections []int) int {
+func LeastConnections(connections []int) int {
 	mini := connections[0]
 	min_index := 0
 
@@ -49,7 +49,7 @@ func least_connections(connections []int) int {
 	return min_index
 }
 
-func hash_lb(node_count int, ip string) uint32 {
+func HashLb(node_count int, ip string) uint32 {
 	hasher := fnv.New32()
 	hasher.Write([]byte(ip))
 	node := hasher.Sum32() % uint32(node_count)
