@@ -1,8 +1,8 @@
 package lb
 
 import (
-	"fmt"
 	"loadbalancer/algorithms"
+	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -28,19 +28,23 @@ func StartServer() {
 
 func lbHandler(w http.ResponseWriter, r *http.Request) {
 
-	algo_id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil {
-		fmt.Printf("error happend when getting algo_id %v", err)
-		http.Error(w, "invalid algorithm id", http.StatusBadRequest)
-		return
-	}
-
 	client_ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
 		http.Error(w, "invalid client ip", http.StatusBadRequest)
+		log.Printf("rejected request invalid client ip")
 		return
 	}
-
+	if !checkLimit(client_ip) {
+		http.Error(w, "too many requests", http.StatusTooManyRequests)
+		log.Printf("rejected request , too many requests from client :%s", client_ip)
+		return
+	}
+	algo_id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil {
+		http.Error(w, "invalid algorithm id", http.StatusBadRequest)
+		log.Printf("error happend when getting algo_id %v", err)
+		return
+	}
 	var node_id int
 	used_lc := false
 	switch algo_id {
@@ -63,11 +67,12 @@ func lbHandler(w http.ResponseWriter, r *http.Request) {
 	node_url, err := url.Parse(nodes[node_id])
 	if err != nil {
 		http.Error(w, "invalid node url", http.StatusInternalServerError)
+		log.Printf("invalid node url parsing for node:%d", node_id)
 		return
 	}
-	fmt.Printf("request is going to node : %v",node_id)
 	proxy := httputil.NewSingleHostReverseProxy(node_url)
 	proxy.ServeHTTP(w, r)
+	log.Printf("request from : %s to node : %d (with algorithm : %d)", client_ip, node_id, algo_id)
 	lc_mu.Lock()
 	if used_lc {
 		nodes_connections[node_id]--
