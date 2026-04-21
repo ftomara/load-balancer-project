@@ -1,7 +1,9 @@
 package lb
 
 import (
+	"encoding/json"
 	"loadbalancer/algorithms"
+	"loadbalancer/models"
 	"log"
 	"net"
 	"net/http"
@@ -11,22 +13,51 @@ import (
 	"sync"
 )
 
-var nodes = []string{"http://node1:8081", "http://node2:8082", "http://node3:8083", "http://node4:8084", "http://node5:8085"}
-var nodes_weight = []int{3, 5, 1, 3, 8}
-var nodes_connections = []int{0, 0, 0, 0, 0}
-var lc_mu sync.Mutex
+var nodes_map = make(map[string]models.Node)
+var active_nodes []models.Node
+var modify_mu sync.Mutex
 
-var rr = algorithms.RoundRobin(len(nodes))
-var wrr = algorithms.WRoundRobin(len(nodes), nodes_weight)
+var rr = algorithms.RoundRobin(len(active_nodes))
+var wrr = algorithms.WRoundRobin(len(active_nodes), active_nodes)
 
 func StartServer() {
 
 	http.HandleFunc("/", lbHandler)
+	http.HandleFunc("/register", registerNodeHandler)
 	http.ListenAndServe(":8080", nil)
 
 }
-
+func registerNodeHandler(w http.ResponseWriter, r *http.Request) {
+	modify_mu.Lock()
+	defer modify_mu.Unlock()
+	var node_info models.RegisterRequest
+	err := json.NewDecoder(r.Body).Decode(&node_info)
+	if err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	n, exist := nodes_map[node_info.Id]
+	if exist {
+		n.Healthy = true
+		nodes_map[node_info.Id] = n
+		return
+	}
+	var node models.Node
+	node.Initialize(node_info.Url, node_info.Weight, node_info.Id)
+	nodes_map[node_info.Id] = node
+	active_nodes = append(active_nodes, node)
+	rr = algorithms.RoundRobin(len(active_nodes))
+	wrr = algorithms.WRoundRobin(len(active_nodes), active_nodes)
+}
 func lbHandler(w http.ResponseWriter, r *http.Request) {
+
+	modify_mu.Lock()
+	if len(active_nodes) == 0 {
+		modify_mu.Unlock()
+		http.Error(w, " no available nodes", http.StatusServiceUnavailable)
+		return
+	}
+	modify_mu.Unlock()
 
 	client_ip, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
@@ -45,6 +76,7 @@ func lbHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("error happend when getting algo_id %v", err)
 		return
 	}
+	modify_mu.Lock()
 	var node_id int
 	used_lc := false
 	switch algo_id {
@@ -53,30 +85,36 @@ func lbHandler(w http.ResponseWriter, r *http.Request) {
 	case 2:
 		node_id = wrr()
 	case 3:
-		node_id = algorithms.RandomLb(len(nodes))
+		node_id = algorithms.RandomLb(len(active_nodes))
 	case 4:
-		lc_mu.Lock()
-		node_id = algorithms.LeastConnections(nodes_connections)
-		nodes_connections[node_id]++
+		node_id = algorithms.LeastConnections(active_nodes)
+		node := active_nodes[node_id]
+		node.Connections++
+		active_nodes[node_id] = node
 		used_lc = true
-		lc_mu.Unlock()
 	case 5:
-		node_id = int(algorithms.HashLb(len(nodes), client_ip))
+		node_id = int(algorithms.HashLb(len(active_nodes), client_ip))
 	}
 
-	node_url, err := url.Parse(nodes[node_id])
+	node_url, err := url.Parse(active_nodes[node_id].Url)
 	if err != nil {
+		modify_mu.Unlock()
 		http.Error(w, "invalid node url", http.StatusInternalServerError)
 		log.Printf("invalid node url parsing for node:%d", node_id)
 		return
 	}
+	modify_mu.Unlock()
+
 	proxy := httputil.NewSingleHostReverseProxy(node_url)
 	proxy.ServeHTTP(w, r)
 	log.Printf("request from : %s to node : %d (with algorithm : %d)", client_ip, node_id, algo_id)
-	lc_mu.Lock()
+
+	modify_mu.Lock()
 	if used_lc {
-		nodes_connections[node_id]--
+		node := active_nodes[node_id]
+		node.Connections--
+		active_nodes[node_id] = node
 	}
-	lc_mu.Unlock()
+	modify_mu.Unlock()
 
 }

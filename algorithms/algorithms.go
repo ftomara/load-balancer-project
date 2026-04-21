@@ -2,6 +2,7 @@ package algorithms
 
 import (
 	"hash/fnv"
+	"loadbalancer/models"
 	"math/rand"
 )
 
@@ -14,13 +15,14 @@ func RoundRobin(nodes_count int) func() int {
 	}
 }
 
-func WRoundRobin(nodes_count int, nodes_weight []int) func() int {
+func WRoundRobin(nodes_count int, nodes []models.Node) func() int {
 	next_node := 0
 	current_node_limit := 0
 
 	return func() int {
 		n := next_node % nodes_count
-		if current_node_limit < nodes_weight[n] {
+
+		if current_node_limit < nodes[n].Weight {
 			current_node_limit++
 			return n
 		} else {
@@ -36,13 +38,13 @@ func RandomLb(nodes_count int) int {
 	return rand.Intn(nodes_count)
 }
 
-func LeastConnections(connections []int) int {
-	mini := connections[0]
+func LeastConnections(nodes []models.Node) int {
+	mini := nodes[0].Connections
 	min_index := 0
 
-	for i := 0; i < len(connections); i++ {
-		if connections[i] < mini {
-			mini = connections[i]
+	for i := range nodes {
+		if nodes[i].Connections < mini {
+			mini = nodes[i].Connections
 			min_index = i
 		}
 	}
