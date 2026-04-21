@@ -24,8 +24,13 @@ func StartServer() {
 
 	http.HandleFunc("/", lbHandler)
 	http.HandleFunc("/register", registerNodeHandler)
+	go StartHealthChecking()
 	http.ListenAndServe(":8080", nil)
 
+}
+func updateAlgorithms() {
+	rr = algorithms.RoundRobin(len(active_nodes))
+	wrr = algorithms.WRoundRobin(len(active_nodes), active_nodes)
 }
 func registerNodeHandler(w http.ResponseWriter, r *http.Request) {
 	modify_mu.Lock()
@@ -40,14 +45,15 @@ func registerNodeHandler(w http.ResponseWriter, r *http.Request) {
 	if exist {
 		n.Healthy = true
 		nodes_map[node_info.Id] = n
+		log.Printf("node %s is back", node_info.Id)
 		return
 	}
 	var node models.Node
 	node.Initialize(node_info.Url, node_info.Weight, node_info.Id)
 	nodes_map[node_info.Id] = node
 	active_nodes = append(active_nodes, node)
-	rr = algorithms.RoundRobin(len(active_nodes))
-	wrr = algorithms.WRoundRobin(len(active_nodes), active_nodes)
+	log.Printf("node %d is registered", len(active_nodes)-1)
+	updateAlgorithms()
 }
 func lbHandler(w http.ResponseWriter, r *http.Request) {
 

@@ -10,8 +10,14 @@ import (
 func StartServer(port string) {
 
 	http.HandleFunc("/calc", calculate)
+	http.HandleFunc("/healthy", isHealthy)
 	http.ListenAndServe(port, nil)
 
+}
+
+func isHealthy(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("I am Alive !"))
 }
 
 func calculate(w http.ResponseWriter, r *http.Request) {
