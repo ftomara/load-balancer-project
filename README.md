@@ -14,7 +14,7 @@
 
 ## Overview :
 
-> The project is a small sized **Load-Balancer(LB)** that implements load-balancing algorithms like **Round** **Robin (RR) , Weighted Round Robin(WRR) , Random LoadBalancing(RLB) , Least Connection(LC) and Source IP Hashing(SIPH)** , ****Distributing the load over a 5 nodes containerized system with **Rate limiting , Health checking** and **Dynamic node registration** features
+> The project is a small sized **Load-Balancer(LB)** that implements load-balancing algorithms like **Round** **Robin (RR) , Weighted Round Robin(WRR) , Random LoadBalancing(RLB) , Least Connection(LC) and Source IP Hashing(SIPH)** , Distributing the load over a 5 nodes containerized system with **Rate limiting , Health checking** and **Dynamic node registration** features
 > 
 
 ---
