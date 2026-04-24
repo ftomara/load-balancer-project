@@ -8,6 +8,7 @@
 > - Algorithms Benchmark
 > - Successful Scenarios (dynamic register, health check, rate limiting demos)
 > - Conclusion
+> - How to Run
 
 ---
 
