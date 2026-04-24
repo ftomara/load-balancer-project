@@ -35,6 +35,7 @@ func updateAlgorithms() {
 func registerNodeHandler(w http.ResponseWriter, r *http.Request) {
 	modify_mu.Lock()
 	defer modify_mu.Unlock()
+	defer updateAlgorithms()
 	var node_info models.RegisterRequest
 	err := json.NewDecoder(r.Body).Decode(&node_info)
 	if err != nil {
@@ -45,6 +46,7 @@ func registerNodeHandler(w http.ResponseWriter, r *http.Request) {
 	if exist {
 		n.Healthy = true
 		nodes_map[node_info.Id] = n
+		active_nodes = append(active_nodes, n)
 		log.Printf("node %s is back", node_info.Id)
 		return
 	}
@@ -53,7 +55,6 @@ func registerNodeHandler(w http.ResponseWriter, r *http.Request) {
 	nodes_map[node_info.Id] = node
 	active_nodes = append(active_nodes, node)
 	log.Printf("node %d is registered", len(active_nodes)-1)
-	updateAlgorithms()
 }
 func lbHandler(w http.ResponseWriter, r *http.Request) {
 
