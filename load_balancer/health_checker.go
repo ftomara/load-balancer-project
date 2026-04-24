@@ -38,7 +38,7 @@ func checkHealth() {
 func updateActiveNodes(key string) {
 	for i := range active_nodes {
 		if active_nodes[i].Id == key {
-			log.Printf("node %d removed from active nodes", i)
+			log.Printf("node %d removed from active nodes with id :%s ", i, key)
 			active_nodes[i] = active_nodes[len(active_nodes)-1]
 			active_nodes = active_nodes[:len(active_nodes)-1]
 			updateAlgorithms()

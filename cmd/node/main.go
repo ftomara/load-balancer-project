@@ -25,7 +25,7 @@ func main() {
 	for {
 		resp, err := http.Post("http://lb:8080/register", "application/json", bytes.NewBuffer(jsonData))
 		if err == nil {
-			log.Printf("Sccessful Post Request on %s", host_name)
+			log.Printf("Sccessful Register Request on %s", host_name)
 			resp.Body.Close()
 			break
 		}
